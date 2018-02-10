@@ -1,2 +1,4 @@
+apiai
+argparse
 nose
-
+uuid
