@@ -4,12 +4,31 @@ import uuid
 
 def main():
     project_id = 'accuracytestbot'
+    parent = 'projects/{}/agent'.format(project_id)
     session_id = str(uuid.uuid4())
     session_client = dialogflow.SessionsClient()
     session = session_client.session_path(project_id, session_id)
     message = 'Hello'
     response = get_chatbot_response(session_client, session, message)
     print_chatbot_response(response)
+
+    delete_all_intents(parent)
+    assert(0 == get_number_of_intents(parent))
+
+
+def get_number_of_intents(parent):
+    return len(list(get_all_intents(parent)))
+
+
+def get_all_intents(parent):
+    intents_client = dialogflow.IntentsClient()
+    return intents_client.list_intents(parent)
+
+
+def delete_all_intents(parent):
+    intents = get_all_intents(parent)
+    intents_client = dialogflow.IntentsClient()
+    intents_client.batch_delete_intents(parent, intents)
 
 
 def get_chatbot_response(session_client, session, message):
