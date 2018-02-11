@@ -1,48 +1,34 @@
-import apiai
-import argparse
-import json
+import dialogflow
 import uuid
 
 
 def main():
-    dialogflow_client_access_token = get_dialogflow_client_access_token()
+    project_id = 'accuracytestbot'
     session_id = str(uuid.uuid4())
-
-    chatbot = apiai.ApiAI(dialogflow_client_access_token)
-
-    user_says = 'Hello'
-    json_response = get_json_response(chatbot, session_id, user_says)
-    intent = json_response_to_intent(json_response)
-    speech = json_response_to_speech(json_response)
-    answer_summary = 'user says: "{}" => intent: "{}", speech: "{}"'.format(user_says, intent, speech)
-    print(answer_summary)
+    session_client = dialogflow.SessionsClient()
+    session = session_client.session_path(project_id, session_id)
+    message = 'Hello'
+    response = get_chatbot_response(session_client, session, message)
+    print_chatbot_response(response)
 
 
-def json_response_to_intent(json_response):
-    return json_response['result']['metadata']['intentName']
+def get_chatbot_response(session_client, session, message):
+    text_input = dialogflow.types.TextInput(
+        text=message, language_code='en')
+    query_input = dialogflow.types.QueryInput(text=text_input)
+    response = session_client.detect_intent(
+        session=session, query_input=query_input)
+    return response
 
 
-def json_response_to_speech(json_response):
-    return json_response['result']['fulfillment']['speech']
-
-
-def get_json_response(chatbot, session_id, user_says):
-    request = chatbot.text_request()
-    request.session_id = session_id
-    request.query = user_says
-    http_response = request.getresponse()
-    response_content = http_response.read()
-    decoded_response = response_content.decode()
-    json_response = json.loads(decoded_response)
-    return json_response
-
-
-def get_dialogflow_client_access_token():
-    parser = argparse.ArgumentParser(description='Process program arguments')
-    parser.add_argument('--dialogflow_client_access_token', type=str,
-                        help='DialogFlow client access token')
-    args = parser.parse_args()
-    return args.dialogflow_client_access_token
+def print_chatbot_response(response):
+    print('=' * 20)
+    print('Query text: {}'.format(response.query_result.query_text))
+    print('Detected intent: {} (confidence: {})\n'.format(
+        response.query_result.intent.display_name,
+        response.query_result.intent_detection_confidence))
+    print('Fulfillment text: {}\n'.format(
+        response.query_result.fulfillment_text))
 
 
 if __name__ == '__main__':

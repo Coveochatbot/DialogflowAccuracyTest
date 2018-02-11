@@ -1,4 +1,3 @@
-apiai
-argparse
+dialogflow==0.1.0
 nose
 uuid
