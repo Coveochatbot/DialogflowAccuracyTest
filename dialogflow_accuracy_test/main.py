@@ -5,11 +5,8 @@ import uuid
 def main():
     project_id = 'accuracytestbot'
     parent = 'projects/{}/agent'.format(project_id)
-    session_id = str(uuid.uuid4())
-    session_client = dialogflow.SessionsClient()
-    session = session_client.session_path(project_id, session_id)
     message = 'Hello'
-    response = get_chatbot_response(session_client, session, message)
+    response = get_chatbot_response(project_id, message)
     print_chatbot_response(response)
 
     delete_all_intents(parent)
@@ -49,6 +46,55 @@ def main():
     ]
     create_intents_from_intent_dicts(parent, intents_to_create)
     assert(2 == get_number_of_intents(parent))
+
+    accuracy_tests = [
+        {
+            'user_says': "What is the best university?",
+            'expected_intent': 'best_university'
+        },
+        {
+            'user_says': "What is the greatest university?",
+            'expected_intent': 'best_university'
+        },
+        {
+            'user_says': "Who makes the best poutine??",
+            'expected_intent': 'best_poutine'
+        },
+        {
+            'user_says': "Where is the best poutine?",
+            'expected_intent': 'best_poutine'
+        },
+        {
+            'user_says': "Very tough question, impossible to get intent",
+            'expected_intent': 'best_university'
+        }
+    ]
+    accuracy_test_results = run_accuracy_tests(project_id, accuracy_tests)
+    nb_passing_tests = len(accuracy_test_results['passing_tests'])
+    nb_failing_tests = len(accuracy_test_results['failing_tests'])
+    nb_total_tests = nb_passing_tests + nb_failing_tests
+    accuracy_ratio = float(nb_passing_tests) / float(nb_total_tests)
+    print('Accuracy ratio: {} / {} = {}'.format(nb_passing_tests, nb_total_tests, accuracy_ratio))
+    assert(4 == nb_passing_tests)
+    assert(1 == nb_failing_tests)
+    assert(0.8 == accuracy_ratio)
+
+
+def run_accuracy_tests(project_id, accuracy_tests):
+    passing_tests = []
+    failing_tests = []
+    for accuracy_test in accuracy_tests:
+        if is_passing_accuracy_test(project_id, accuracy_test):
+            passing_tests.append(accuracy_test)
+        else:
+            failing_tests.append(accuracy_test)
+    return {'passing_tests': passing_tests, 'failing_tests': failing_tests}
+
+
+def is_passing_accuracy_test(project_id, accuracy_test):
+    response = get_chatbot_response(project_id, accuracy_test['user_says'])
+    intent = response.query_result.intent.display_name
+    return accuracy_test['expected_intent'] == intent
 
 
 def create_intent(parent, display_name, training_phrases_parts,
@@ -102,7 +148,10 @@ def delete_all_intents(parent):
     intents_client.batch_delete_intents(parent, intents)
 
 
-def get_chatbot_response(session_client, session, message):
+def get_chatbot_response(project_id, message):
+    session_id = str(uuid.uuid4())
+    session_client = dialogflow.SessionsClient()
+    session = session_client.session_path(project_id, session_id)
     text_input = dialogflow.types.TextInput(
         text=message, language_code='en')
     query_input = dialogflow.types.QueryInput(text=text_input)
