@@ -5,79 +5,59 @@ import uuid
 def main():
     project_id = 'accuracytestbot'
     parent = 'projects/{}/agent'.format(project_id)
-    message = 'Hello'
-    response = get_chatbot_response(project_id, message)
-    print_chatbot_response(response)
 
-    delete_all_intents(parent)
-    assert(0 == get_number_of_intents(parent))
-
-    intents_to_create = [
-        {
-            'display_name': 'best_university',
-            'training_phrases_parts': [
-                'what is the best university?',
-                'what is the greatest university?',
-                'where should I study?',
-                'can you recommend me an university?'
-            ],
-            'message_texts': [
-                'Sherby',
-                'Sherbrooke',
-                'Université de Sherbrooke',
-                'UdeS'
-            ]
-        },
-        {
-            'display_name': 'best_poutine',
-            'training_phrases_parts': [
-                'who makes the greatest poutine?',
-                'who makes the best poutine?',
-                'where is the greatest poutine?',
-                'where is the best poutine?'
-            ],
-            'message_texts': [
-                'Snack bar Cameleon',
-                'The Snack',
-                'The Cameleon',
-                'That poutine place on Galt street'
-            ]
-        }
+    user_says_for_basic_find_intent_for_training_phrases = [
+        'Hello',
+        'Hi',
+        'Good evening',
+        'Good morning'
     ]
-    create_intents_from_intent_dicts(parent, intents_to_create)
-    assert(2 == get_number_of_intents(parent))
-
-    accuracy_tests = [
-        {
-            'user_says': "What is the best university?",
-            'expected_intent': 'best_university'
-        },
-        {
-            'user_says': "What is the greatest university?",
-            'expected_intent': 'best_university'
-        },
-        {
-            'user_says': "Who makes the best poutine??",
-            'expected_intent': 'best_poutine'
-        },
-        {
-            'user_says': "Where is the best poutine?",
-            'expected_intent': 'best_poutine'
-        },
-        {
-            'user_says': "Very tough question, impossible to get intent",
-            'expected_intent': 'best_university'
-        }
+    user_says_for_detect_entity = [
+        'I need help with my mouse',
+        'My mouse is broken',
+        'My mouse stopped working',
+        'There is a bug with my mouse',
+        'I need help with ASDFGT',
+        'My ASDFGT is broken'
     ]
-    accuracy_test_results = run_accuracy_tests(project_id, accuracy_tests)
-    nb_passing_tests = len(accuracy_test_results['passing_tests'])
-    nb_failing_tests = len(accuracy_test_results['failing_tests'])
-    nb_total_tests = nb_passing_tests + nb_failing_tests
-    accuracy_ratio = float(nb_passing_tests) / float(nb_total_tests)
-    print('Accuracy ratio: {} / {} = {}'.format(nb_passing_tests, nb_total_tests, accuracy_ratio))
-    assert(4 == nb_passing_tests)
-    assert(1 == nb_failing_tests)
-    assert(0.8 == accuracy_ratio)
+    user_says_for_detect_ambiguous_intent = [
+        'I need help with hello',
+        'Hello, I need help with my mouse',
+        'Hi, my mouse is broken',
+    ]
+    user_says_for_detect_intent_with_typo = [
+        'Helo',
+        'I need hepl with my mouse',
+        'Hi, my mouse is broke',
+        'I needs help with my mouse',
+    ]
+    user_says_for_not_return_wrong_intent = [
+        'Thank you',
+        'Thanks',
+        'Good bye',
+        'Bye',
+    ]
+    user_says_for_dynamic_entities = [
+        'What is the weather tomorrow?',
+        'What is the weather today?',
+        'What was the weather yesterday?',
+        'What is the weather next week?',
+        'What is the weather two days ago?'
+    ]
+
+    user_says_list = (
+        user_says_for_basic_find_intent_for_training_phrases +
+        user_says_for_detect_entity +
+        user_says_for_detect_ambiguous_intent +
+        user_says_for_detect_intent_with_typo +
+        user_says_for_not_return_wrong_intent +
+        user_says_for_dynamic_entities
+    )
+    assert(26 == len(user_says_list))
+
+    responses = [get_chatbot_response(project_id, user_says) for user_says in user_says_list]
+    with open('output', 'w') as file:
+        print(responses, file=file)
 
 
 def run_accuracy_tests(project_id, accuracy_tests):
